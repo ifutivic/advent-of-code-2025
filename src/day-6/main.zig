@@ -87,23 +87,19 @@ pub fn main() !void {
             line_position += problem.width + 1;
 
             const trimmed_line_segment = std.mem.trim(u8, line_segment, " ");
-            if (std.meta.stringToEnum(MathOperation, trimmed_line_segment) != null) {
-                continue;
-            }
+            _ = std.fmt.parseInt(u64, trimmed_line_segment, 10) catch continue;
 
             try problems.items[i].line_segments.append(allocator, line_segment);
         }
     }
 
     for (problems.items, 0..) |problem, i| {
-        var j: usize = problem.width;
-
-        while (j > 0) : (j -= 1) {
+        for (0..problem.width) |j| {
             var column = try allocator.alloc(u8, problem.line_segments.items.len);
             defer allocator.free(column);
 
             for (problem.line_segments.items, 0..) |line_segment, k| {
-                column[k] = line_segment[j - 1];
+                column[k] = line_segment[j];
             }
 
             const number = try std.fmt.parseInt(u64, std.mem.trim(u8, column, " "), 10);
