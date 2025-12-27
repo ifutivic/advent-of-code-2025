@@ -90,7 +90,7 @@ const JunctionBox = struct {
         for (boxes) |*box| {
             if (box.network == drop) {
                 box.network = keep;
-                keep.size += 1;
+                keep.increase_size();
             }
         }
 
@@ -164,12 +164,12 @@ pub fn main() !void {
         _ = try boxes.items[pair.i].connect(&boxes.items[pair.j], boxes.items, allocator);
     }
 
-    var connections = std.AutoHashMap(u64, u64).init(allocator);
+    var connections = std.AutoHashMap(*Network, void).init(allocator);
     defer connections.deinit();
 
     for (boxes.items) |box| {
         if (box.network) |net| {
-            try connections.put(net.id, net.size);
+            try connections.put(net, {});
         }
     }
 
@@ -178,7 +178,7 @@ pub fn main() !void {
 
     var it = connections.iterator();
     while (it.next()) |entry| {
-        try circuits.append(allocator, entry.value_ptr.*);
+        try circuits.append(allocator, entry.key_ptr.*.size);
     }
 
     std.mem.sort(u64, circuits.items, {}, std.sort.desc(u64));
@@ -191,6 +191,7 @@ pub fn main() !void {
     std.debug.print("Product of the 3 largest circuits is {}\n", .{product});
 
     var boxes_copy = try boxes.clone(allocator);
+    defer boxes_copy.deinit(allocator);
 
     var last_xi: u64 = undefined;
     var last_xj: u64 = undefined;
