@@ -140,14 +140,10 @@ pub fn main() !void {
     var pairs = try std.ArrayList(JunctionBoxPair).initCapacity(allocator, 0);
     defer pairs.deinit(allocator);
 
-    var offset: usize = 1;
-
     for (0..boxes.items.len - 1) |i| {
-        for (offset..boxes.items.len) |j| {
+        for (i + 1..boxes.items.len) |j| {
             try pairs.append(allocator, .{ .i = i, .j = j, .distance = boxes.items[i].distance(boxes.items[j]) });
         }
-
-        offset += 1;
     }
 
     std.mem.sort(JunctionBoxPair, pairs.items, {}, struct {
