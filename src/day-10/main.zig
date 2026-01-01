@@ -239,45 +239,43 @@ fn recursive(
 fn generateButtonCombinations(
     allocator: std.mem.Allocator,
     machine: Machine,
-    current_combo: *std.ArrayList(usize),
-    start_button: usize,
     button_combo_cache: *std.AutoHashMap(u64, std.ArrayList([]usize)),
 ) !void {
     const num_lights = machine.joltage_counter.lights.len;
+    const num_buttons = machine.button_schematics.len;
+    const total_combos = @as(usize, 1) << @intCast(num_buttons);
 
     var lights = try allocator.alloc(bool, num_lights);
     defer allocator.free(lights);
-    @memset(lights, false);
 
-    for (0..num_lights) |light_index| {
-        var count: usize = 0;
-        for (current_combo.items) |button_index| {
-            for (machine.button_schematics[button_index].schematic) |affected_light| {
-                if (affected_light == light_index) {
-                    count += 1;
-                    break;
+    for (0..total_combos) |mask| {
+        @memset(lights, false);
+
+        var combo_size: usize = 0;
+        for (0..num_buttons) |button_index| {
+            if (mask & (@as(usize, 1) << @intCast(button_index)) != 0) {
+                combo_size += 1;
+                for (machine.button_schematics[button_index].schematic) |light_index| {
+                    lights[light_index] = !lights[light_index];
                 }
             }
         }
-        lights[light_index] = (count % 2 == 1);
-    }
 
-    const button_combo_cache_key = IndicatorLights.init(lights, 0).hash();
+        const button_combo = try allocator.alloc(usize, combo_size);
+        var combo_index: usize = 0;
+        for (0..num_buttons) |button_index| {
+            if (mask & (@as(usize, 1) << @intCast(button_index)) != 0) {
+                button_combo[combo_index] = button_index;
+                combo_index += 1;
+            }
+        }
 
-    const button_combo = try allocator.alloc(usize, current_combo.items.len);
-    @memcpy(button_combo, current_combo.items);
-
-    const entry = try button_combo_cache.getOrPut(button_combo_cache_key);
-    if (!entry.found_existing) {
-        entry.value_ptr.* = try std.ArrayList([]usize).initCapacity(allocator, 1);
-    }
-    try entry.value_ptr.append(allocator, button_combo);
-
-    const num_buttons = machine.button_schematics.len;
-    for (start_button..num_buttons) |button_index| {
-        try current_combo.append(allocator, button_index);
-        try generateButtonCombinations(allocator, machine, current_combo, button_index + 1, button_combo_cache);
-        _ = current_combo.pop();
+        const button_combo_cache_key = IndicatorLights.init(lights, 0).hash();
+        const entry = try button_combo_cache.getOrPut(button_combo_cache_key);
+        if (!entry.found_existing) {
+            entry.value_ptr.* = try std.ArrayList([]usize).initCapacity(allocator, 1);
+        }
+        try entry.value_ptr.append(allocator, button_combo);
     }
 }
 
@@ -294,10 +292,7 @@ fn solvePart2(allocator: std.mem.Allocator, machine: Machine) !usize {
         button_combo_cache.deinit();
     }
 
-    var current_combo = try std.ArrayList(usize).initCapacity(allocator, machine.button_schematics.len);
-    defer current_combo.deinit(allocator);
-
-    try generateButtonCombinations(allocator, machine, &current_combo, 0, &button_combo_cache);
+    try generateButtonCombinations(allocator, machine, &button_combo_cache);
 
     var joltage_cache = std.AutoHashMap(u64, usize).init(allocator);
     defer joltage_cache.deinit();
