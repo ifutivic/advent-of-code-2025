@@ -4,7 +4,7 @@ pub fn build(b: *std.Build) !void {
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
-    const total_days: usize = 10;
+    const total_days: usize = 11;
 
     for (1..total_days + 1) |i| {
         const day_number = try std.fmt.allocPrint(b.allocator, "{}", .{i});
