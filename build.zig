@@ -1,22 +1,19 @@
 const std = @import("std");
 
 pub fn build(b: *std.Build) !void {
-    var debug_allocator = std.heap.DebugAllocator(.{}){};
-    const allocator = debug_allocator.allocator();
-
     const target = b.standardTargetOptions(.{});
     const optimize = b.standardOptimizeOption(.{});
 
     const total_days: usize = 10;
 
     for (1..total_days + 1) |i| {
-        const day_number = try std.fmt.allocPrint(allocator, "{}", .{i});
+        const day_number = try std.fmt.allocPrint(b.allocator, "{}", .{i});
         const day_prefix = "day-";
 
-        const day = try std.mem.concat(allocator, u8, &.{ day_prefix, day_number });
-        defer allocator.free(day);
-        const path = try std.mem.concat(allocator, u8, &.{ "src/", day, "/main.zig" });
-        defer allocator.free(path);
+        const day = try std.mem.concat(b.allocator, u8, &.{ day_prefix, day_number });
+        defer b.allocator.free(day);
+        const path = try std.mem.concat(b.allocator, u8, &.{ "src/", day, "/main.zig" });
+        defer b.allocator.free(path);
 
         const exe = b.addExecutable(.{
             .name = day,
