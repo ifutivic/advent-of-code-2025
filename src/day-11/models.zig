@@ -25,8 +25,8 @@ pub const Graph = struct {
 
     pub fn deinit(self: *Graph) void {
         var value_iterator = self.edges.valueIterator();
-        while (value_iterator.next()) |slice| {
-            self.allocator.free(slice.*);
+        while (value_iterator.next()) |nodes| {
+            self.allocator.free(nodes.*);
         }
         self.edges.deinit();
     }

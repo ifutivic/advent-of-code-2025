@@ -2,8 +2,7 @@ const std = @import("std");
 const Node = @import("models.zig").Node;
 const Graph = @import("models.zig").Graph;
 
-const solvePart1 = @import("part-1.zig").solvePart1;
-const solvePart2 = @import("part-2.zig").solvePart2;
+const findAllPaths = @import("solve.zig").findAllPaths;
 
 pub fn main() !void {
     var debug_allocator = std.heap.DebugAllocator(.{}){};
@@ -38,20 +37,23 @@ pub fn main() !void {
 
     const you = Node.init("you");
     const out = Node.init("out");
-    var paths_part_1 = try solvePart1(graph, you, out, allocator);
-    defer {
-        for (paths_part_1.items) |path| {
-            allocator.free(path);
-        }
-        paths_part_1.deinit(allocator);
-    }
+    const paths_you_out = try findAllPaths(allocator, graph, you, out);
 
-    std.debug.print("Found {} paths between '{s}' and '{s}'\n", .{ paths_part_1.items.len, you.id, out.id });
+    std.debug.print("Found {d} paths between '{s}' and '{s}'\n", .{ paths_you_out, you.id, out.id });
 
     const svr = Node.init("svr");
     const fft = Node.init("fft");
     const dac = Node.init("dac");
-    const paths_part_2 = try solvePart2(graph, svr, out, fft, dac, allocator);
 
-    std.debug.print("Found {} paths between '{s}' and '{s}' which visit both '{s}' and '{s}'\n", .{ paths_part_2, svr.id, out.id, dac.id, fft.id });
+    const paths_svr_fft = try findAllPaths(allocator, graph, svr, fft);
+    const paths_fft_dac = try findAllPaths(allocator, graph, fft, dac);
+    const paths_dac_out = try findAllPaths(allocator, graph, dac, out);
+
+    const paths_svr_dac = try findAllPaths(allocator, graph, svr, dac);
+    const paths_dac_fft = try findAllPaths(allocator, graph, dac, fft);
+    const paths_fft_out = try findAllPaths(allocator, graph, fft, out);
+
+    const total_paths = paths_svr_fft * paths_fft_dac * paths_dac_out + paths_svr_dac * paths_dac_fft * paths_fft_out;
+
+    std.debug.print("Found {d} paths between '{s}' and '{s}' which visit both '{s}' and '{s}'\n", .{ total_paths, svr.id, out.id, dac.id, fft.id });
 }
