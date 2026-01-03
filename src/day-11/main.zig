@@ -15,7 +15,7 @@ pub fn main() !void {
     var line_iterator = std.mem.splitScalar(u8, input, '\n');
 
     while (line_iterator.next()) |line| {
-        if (std.mem.eql(u8, line, "")) {
+        if (line.len == 0) {
             continue;
         }
 
