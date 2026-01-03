@@ -1,7 +1,8 @@
 const std = @import("std");
 
 pub fn main() !void {
-    var debug_allocator = std.heap.DebugAllocator(.{}){};
+    var debug_allocator = std.heap.DebugAllocator(.{}).init;
+    defer _ = debug_allocator.deinit();
     const allocator = debug_allocator.allocator();
 
     const file = try std.fs.cwd().openFile("src/day-7/input.txt", .{});
@@ -22,7 +23,12 @@ pub fn main() !void {
     const beams = try allocator.alloc([]u8, line_count);
     defer allocator.free(beams);
     const timelines = try allocator.alloc([]?u64, line_count);
-    defer allocator.free(timelines);
+    defer {
+        for (timelines) |timeline| {
+            allocator.free(timeline);
+        }
+        allocator.free(timelines);
+    }
 
     var line_number: usize = 0;
 

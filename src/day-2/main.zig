@@ -2,6 +2,7 @@ const std = @import("std");
 
 pub fn main() !void {
     var debug_allocator: std.heap.DebugAllocator(.{}) = std.heap.DebugAllocator(.{}).init;
+    defer _ = debug_allocator.deinit();
     const allocator: std.mem.Allocator = debug_allocator.allocator();
 
     const file: std.fs.File = try std.fs.cwd().openFile("src/day-2/input.txt", .{});

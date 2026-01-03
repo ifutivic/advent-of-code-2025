@@ -1,7 +1,8 @@
 const std = @import("std");
 
 pub fn main() !void {
-    var debug_allocator = std.heap.DebugAllocator(.{}){};
+    var debug_allocator = std.heap.DebugAllocator(.{}).init;
+    defer _ = debug_allocator.deinit();
     const allocator = debug_allocator.allocator();
 
     const file = try std.fs.cwd().openFile("src/day-4/input.txt", .{});
@@ -87,7 +88,12 @@ pub fn main() !void {
     var total_removed_count: usize = 0;
     while (true) {
         const paper_rolls_copy = try allocator.alloc([]u8, height);
-        defer allocator.free(paper_rolls_copy);
+        defer {
+            for (paper_rolls_copy) |line| {
+                allocator.free(line);
+            }
+            allocator.free(paper_rolls_copy);
+        }
         for (0..height) |i| {
             paper_rolls_copy[i] = try allocator.dupe(u8, paper_rolls[i]);
         }

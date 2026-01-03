@@ -100,7 +100,8 @@ const JunctionBox = struct {
 };
 
 pub fn main() !void {
-    var debug_allocator = std.heap.DebugAllocator(.{}){};
+    var debug_allocator = std.heap.DebugAllocator(.{}).init;
+    defer _ = debug_allocator.deinit();
     const allocator = debug_allocator.allocator();
 
     const file = try std.fs.cwd().openFile("src/day-8/input.txt", .{});
@@ -189,6 +190,10 @@ pub fn main() !void {
     var boxes_copy = try boxes.clone(allocator);
     defer boxes_copy.deinit(allocator);
 
+    for (boxes_copy.items) |*box| {
+        box.network = null;
+    }
+
     var last_xi: u64 = undefined;
     var last_xj: u64 = undefined;
 
@@ -211,4 +216,25 @@ pub fn main() !void {
     }
 
     std.debug.print("Product of the coordinates of the 2 circuits which completed the final network is {}\n", .{last_xi * last_xj});
+
+    var all_networks = std.AutoHashMap(*Network, void).init(allocator);
+    defer {
+        var network_iterator = all_networks.keyIterator();
+        while (network_iterator.next()) |net_ptr| {
+            allocator.destroy(net_ptr.*);
+        }
+        all_networks.deinit();
+    }
+
+    for (boxes.items) |box| {
+        if (box.network) |net| {
+            try all_networks.put(net, {});
+        }
+    }
+
+    for (boxes_copy.items) |box| {
+        if (box.network) |net| {
+            try all_networks.put(net, {});
+        }
+    }
 }

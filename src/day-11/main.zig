@@ -5,7 +5,8 @@ const Graph = @import("models.zig").Graph;
 const findAllPaths = @import("solve.zig").findAllPaths;
 
 pub fn main() !void {
-    var debug_allocator = std.heap.DebugAllocator(.{}){};
+    var debug_allocator = std.heap.DebugAllocator(.{}).init;
+    defer _ = debug_allocator.deinit();
     const allocator = debug_allocator.allocator();
 
     var graph = Graph.init(allocator);

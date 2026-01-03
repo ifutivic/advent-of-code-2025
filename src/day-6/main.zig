@@ -14,7 +14,8 @@ const MathProblem = struct {
 };
 
 pub fn main() !void {
-    var debug_allocator = std.heap.DebugAllocator(.{}){};
+    var debug_allocator = std.heap.DebugAllocator(.{}).init;
+    defer _ = debug_allocator.deinit();
     const allocator = debug_allocator.allocator();
 
     const file = try std.fs.cwd().openFile("src/day-6/input.txt", .{});
@@ -28,7 +29,14 @@ pub fn main() !void {
     var reader = &file_reader.interface;
 
     var problems = try std.ArrayList(MathProblem).initCapacity(allocator, 0);
-    defer problems.deinit(allocator);
+    defer {
+        for (0..problems.items.len) |i| {
+            problems.items[i].numbers_horizontal.deinit(allocator);
+            problems.items[i].numbers_vertical.deinit(allocator);
+            problems.items[i].line_segments.deinit(allocator);
+        }
+        problems.deinit(allocator);
+    }
 
     while (try reader.takeDelimiter('\n')) |line| {
         var token_iterator = std.mem.tokenizeScalar(u8, line, ' ');
