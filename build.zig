@@ -6,14 +6,11 @@ pub fn build(b: *std.Build) !void {
 
     const total_days: usize = 12;
 
-    for (1..total_days + 1) |i| {
-        const day_number = try std.fmt.allocPrint(b.allocator, "{}", .{i});
+    inline for (1..total_days + 1) |i| {
         const day_prefix = "day-";
-
-        const day = try std.mem.concat(b.allocator, u8, &.{ day_prefix, day_number });
-        defer b.allocator.free(day);
-        const path = try std.mem.concat(b.allocator, u8, &.{ "src/", day, "/main.zig" });
-        defer b.allocator.free(path);
+        const day_number = std.fmt.comptimePrint("{d}", .{i});
+        const day = day_prefix ++ day_number;
+        const path = "src/" ++ day ++ "/main.zig";
 
         const exe = b.addExecutable(.{
             .name = day,
@@ -23,16 +20,17 @@ pub fn build(b: *std.Build) !void {
                 .optimize = optimize,
             }),
         });
-
         b.installArtifact(exe);
 
-        const run_step = b.step(day, "Run the app");
-        const run_cmd = b.addRunArtifact(exe);
-        run_step.dependOn(&run_cmd.step);
-        run_cmd.step.dependOn(b.getInstallStep());
+        const build_cmd = b.addInstallArtifact(exe, .{});
 
-        if (b.args) |args| {
-            run_cmd.addArgs(args);
-        }
+        const build_step = b.step(day, std.fmt.comptimePrint("Build the code for AoC {s}", .{day}));
+        build_step.dependOn(&build_cmd.step);
+
+        const run_cmd = b.addRunArtifact(exe);
+        run_cmd.setCwd(b.path(""));
+
+        const run_step = b.step("run-" ++ day, std.fmt.comptimePrint("Run the code for AoC {s}", .{day}));
+        run_step.dependOn(&run_cmd.step);
     }
 }
